@@ -1,0 +1,12 @@
+sequenceDiagram
+    participant browser
+    participant server
+
+    Note right of browser: js function form.onsubmit add new note to array
+    Note right of browser: and send new note to the server witch sentToServer(note) function
+
+    browser->>server: POST https://studies.cs.helsinki.fi/exampleapp/new_note_spa
+    activate server
+    server-->>browser: Satus 201 Created witch response {"message":"note created"}
+    deactivate server
+    
