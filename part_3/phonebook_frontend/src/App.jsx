@@ -19,7 +19,9 @@ const App = () => {
   const loadData = () => {
     servicesPhonebook
       .getAll()
-      .then(response => { setPersons(response) })
+      .then(response => {
+        setPersons(response)
+      })
   }
 
   const addPerson = (newPerson) => {
@@ -31,7 +33,7 @@ const App = () => {
           showMessage("Added " + response.name, false)
         })
         .catch(response => {
-          showMessage(response.response.data.error,true)
+          showMessage(response.response.data.error, true)
           console.log(response.response.data.error)
         })
 
@@ -59,6 +61,7 @@ const App = () => {
         .then(response => {
           setPersons(persons.filter(n => n.id !== id))
           showMessage("Deleted " + persons.find(n => n.id === id).name, true)
+          console.log(response);
         })
         .catch(response => console.log(response))
     }

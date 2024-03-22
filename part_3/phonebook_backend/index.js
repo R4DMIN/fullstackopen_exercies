@@ -3,6 +3,10 @@ const app = express()
 const morgan = require('morgan')
 const PersonModel = require('./mongo.js')
 
+// do obsługi z różnych adresów
+const cors = require('cors')
+app.use(cors())
+
 morgan.token('body', req => {
     return JSON.stringify(req.body)
 })
@@ -11,31 +15,12 @@ app.use(express.static('dist'))
 app.use(express.json()) // do wcztywania formatu json
 app.use(morgan(':method :url :status - :response-time ms :body'))
 
-const generateId = () => {
-    let newId = Math.floor(Math.random() * 10000)
-
-    while (!(!(phonebookData.find(p => p.id === newId)))) {
-        newId = Math.floor(Math.random() * 10000)
-        console.log('generate again');
-    }
-    console.log(`new ID:${newId}`);
-
-    return newId
-}
-
 app.get('/', (request, response) => {
     response.send('<h1>Hello World!</h1>')
 })
 
-app.get('/info', (request, response) => {
-    const phonebookLength = phonebookData.length
-    var date = new Date();
-
-    response.send(`<div>Phonebook has info for ${phonebookLength} people</div><div>${date}</div>`)
-})
-
-app.get('/api/persons/', (request, response) => {
-    console.log("GET phonebook ALL");
+app.get('/api/persons/', (request, response, next) => {
+    console.log('GET phonebook ALL')
     PersonModel
         .find({})
         .then(persons => {
@@ -45,15 +30,6 @@ app.get('/api/persons/', (request, response) => {
 })
 
 app.get('/api/persons/:id', (request, response, next) => {
-    /*     const id = Number(request.params.id)
-        const person = phonebookData.find((p) => p.id === id)
-        if (person) {
-            console.log(`load person with ${id}`);
-            return response.json(person)
-        } else {
-            console.log(`"no data with this id"`);
-            return response.status(404).json({ error: "no data with this id" })
-        } */
     PersonModel
         .findById(request.params.id)
         .then(person => {
@@ -61,13 +37,13 @@ app.get('/api/persons/:id', (request, response, next) => {
                 response.json(person)
             }
             else {
-                response.status(404).json({ error: "no data with this id" })
+                response.status(404).json({ error: 'no data with this id' })
             }
         })
         .catch(error => next(error))
 })
 
-app.delete('/api/persons/:id', (request, response) => {
+app.delete('/api/persons/:id', (request, response, next) => {
     /*     const id = Number(request.params.id)
         if (!phonebookData.find((p) => p.id === id)) {
             console.log(`no person witch this id:${id}`);
@@ -79,17 +55,17 @@ app.delete('/api/persons/:id', (request, response) => {
         } */
     PersonModel
         .findByIdAndDelete(request.params.id)
-        .then(requiest => {
+        .then(() => {
             response.status(204).end()
         })
         .catch(error => next(error))
 })
 
-app.post('/api/persons/', (request, response) => {
+app.post('/api/persons/', (request, response, next) => {
     const body = request.body
     if (!body.name || !body.number) {
-        console.log("POST The name or number is missing")
-        return response.status(400).json({ error: "The name or number is missing" })
+        console.log('POST The name or number is missing')
+        return response.status(400).json({ error: 'The name or number is missing' })
     }
     /* if (!!(phonebookData.find(p => p.name === body.name))) {
         console.log("POST The name already exists in the phonebook")
@@ -103,23 +79,24 @@ app.post('/api/persons/', (request, response) => {
     person
         .save()
         .then(result => {
-            console.log(`POST new person id:${result.id}`);
+            console.log(`POST new person id:${result.id}`)
             response.status(200).json(result)
         })
+        .catch(error => next(error))
 })
 
 app.put('/api/persons/:id', (request, response, next) => {
     const body = request.body
     if (!body.name || !body.number) {
-        console.log("POST The name or number is missing")
-        return response.status(400).json({ error: "The name or number is missing" })
+        console.log('POST The name or number is missing')
+        return response.status(400).json({ error: 'The name or number is missing' })
     }
     const person = {
         name: body.name,
         number: body.number,
     }
     PersonModel
-        .findByIdAndUpdate(request.params.id, person, {new: true})
+        .findByIdAndUpdate(request.params.id, person, { runValidators: true, context: 'query' })
         .then(updatePerson => {
             response.json(updatePerson)
         })
@@ -127,17 +104,21 @@ app.put('/api/persons/:id', (request, response, next) => {
 })
 
 const unknownEndpoint = (request, response) => {
-    response.status(404).send({ error: "unknown endpoint" })
+    response.status(404).send({ error: 'unknown endpoint' })
 }
 app.use(unknownEndpoint)
 
-const errorHandler = (error, request, response, next) => {
+const errorHandler = (error, request, response) => {
     if (error.name === 'CastError') {
-        console.log('Error: wrong id');
+        console.log('Error: wrong id')
         return response.status(400).json({ error: 'wrong id' })
     }
-    console.log(error);
-    next(error)
+    if (error.name === 'ValidationError') {
+        console.log('Validation Error')
+        return response.status(400).json({ error: error.message })
+    }
+    console.log('error code 500', error)
+    response.status(500).end()
 }
 app.use(errorHandler)
 

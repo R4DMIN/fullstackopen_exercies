@@ -1,6 +1,6 @@
 import { useState } from "react"
 
-const PersonForm = ({ addPersonHandler}) => {
+const PersonForm = ({ addPersonHandler }) => {
     const [newName, setNewName] = useState('')
     const [newNumber, setNewNumber] = useState('')
     const addPerson = (event) => {
@@ -17,8 +17,8 @@ const PersonForm = ({ addPersonHandler}) => {
         <div>
             <form onSubmit={addPerson}>
                 <div>name:<input type="text" value={newName} onChange={(event) => setNewName(event.target.value)} /></div>
-                <div>phone:<input type="number" value={newNumber} onChange={(event) => setNewNumber(event.target.value)} />
-                <div></div><button type="submit">add</button></div>
+                <div>phone:<input type="text" value={newNumber} onChange={(event) => setNewNumber(event.target.value)} /></div>
+                <div><button type="submit">add</button></div>
             </form>
         </div>
     )
